@@ -11,14 +11,29 @@ from tensorflow.keras.models import Model
 
 def load_captions(file):
     mapping = {}
-    with open(file, 'r') as f:
+
+    with open(file, 'r', encoding='utf-8') as f:
         for line in f:
-            img, normal, social = line.strip().split('|')
+            line = line.strip()
+
+            # skipping empty lines
+            if not line:
+                continue
+
+            parts = line.split('|')
+
+            # skip wrong format lines
+            if len(parts) != 3:
+                print("Skipping bad line:", line)
+                continue
+
+            img, normal, social = parts
             img_id = img.split('.')[0]
 
             mapping.setdefault(img_id, [])
             mapping[img_id].append(normal)
             mapping[img_id].append(social)
+
     return mapping
 
 def build_cnn():
