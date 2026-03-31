@@ -205,3 +205,12 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+# Model files
+model/*.h5
+model/*.pkl
+
+# Dataset images (optional)
+dataset/images/
+
+# Streamlit cache
+.streamlit/
