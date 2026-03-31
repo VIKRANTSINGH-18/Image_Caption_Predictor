@@ -1,5 +1,3 @@
-# train.py
-
 import os
 import pickle
 import numpy as np
@@ -11,29 +9,19 @@ from tensorflow.keras.models import Model
 
 def load_captions(file):
     mapping = {}
-
     with open(file, 'r', encoding='utf-8') as f:
         for line in f:
             line = line.strip()
-
-            # skipping empty lines
             if not line:
                 continue
-
             parts = line.split('|')
-
-            # skip wrong format lines
             if len(parts) != 3:
-                print("Skipping bad line:", line)
                 continue
-
             img, normal, social = parts
             img_id = img.split('.')[0]
-
             mapping.setdefault(img_id, [])
             mapping[img_id].append(normal)
             mapping[img_id].append(social)
-
     return mapping
 
 def build_cnn():
@@ -49,18 +37,15 @@ def build_cnn():
     return Model(inputs, x)
 
 def main():
-
     captions = load_captions("dataset/captions.txt")
     cnn = build_cnn()
 
     features = {}
     for img_name in os.listdir("dataset/images"):
         path = os.path.join("dataset/images", img_name)
-
         img = load_img(path, target_size=(128,128))
         img = img_to_array(img)/255.0
         img = np.expand_dims(img, axis=0)
-
         feature = cnn.predict(img, verbose=0)
         features[img_name.split('.')[0]] = feature[0]
 
@@ -76,13 +61,10 @@ def main():
     for key in captions:
         for cap in captions[key]:
             seq = tokenizer.texts_to_sequences([cap])[0]
-
             for i in range(1, len(seq)):
                 in_seq = seq[:i]
                 out_seq = seq[i]
-
                 in_seq = pad_sequences([in_seq], maxlen=max_len)[0]
-
                 X1.append(features[key])
                 X2.append(in_seq)
                 y.append(out_seq)
@@ -98,19 +80,19 @@ def main():
 
     decoder = add([fe, se])
     decoder = Dense(256, activation='relu')(decoder)
-
     output = Dense(vocab_size, activation='softmax')(decoder)
 
     model = Model([input1, input2], output)
     model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
 
-    model.fit([X1, X2], y, epochs=10, batch_size=32)
+    model.fit([X1, X2], y, epochs=5, batch_size=32, verbose=1)
 
     os.makedirs("model", exist_ok=True)
-    model.save("model/image_caption_model.h5")
+    model.save("model/model.keras")
     pickle.dump(tokenizer, open("model/tokenizer.pkl", "wb"))
+    pickle.dump(max_len, open("model/max_len.pkl", "wb"))
 
-    print("Training Done & Model Saved!")
+    print("Training Done!")
 
 if __name__ == "__main__":
     main()
